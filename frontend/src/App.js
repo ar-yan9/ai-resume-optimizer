@@ -13,9 +13,26 @@ ChartJS.register(ArcElement, Tooltip, Legend);
 const API_URL = process.env.REACT_APP_API_URL || "http://localhost:8000";
 
 function KeywordList({ title, items, variant }) {
+  const [copied, setCopied] = useState(false);
+
+  async function copyAll() {
+    try {
+      await navigator.clipboard.writeText(items.join(", "));
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      setCopied(false);
+    }
+  }
+
   return (
     <section className="keyword-card">
       <h3>{title} <span className="count">{items.length}</span></h3>
+      {items.length > 0 && (
+        <button type="button" className="copy-button" onClick={copyAll}>
+          {copied ? "Copied" : "Copy list"}
+        </button>
+      )}
       {items.length ? (
         <div className="keyword-list">
           {items.map((item) => (
