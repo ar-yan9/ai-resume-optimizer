@@ -9,6 +9,8 @@ A beginner-friendly React + FastAPI application that compares a resume with a jo
 - View matched and missing keywords
 - React frontend and FastAPI REST backend
 
+> Status: the backend tests pass and the frontend builds. The full flow (upload, analyze, results) was checked against a running backend with the API.
+
 > This is a newly written starter implementation, not a recovered copy of any previous source code. The score is a simple keyword-overlap estimate, not a validated ATS score.
 
 ## Requirements
@@ -33,6 +35,17 @@ npm install
 npm start
 ```
 The React app runs on http://localhost:3000 and calls the API at http://localhost:8000.
+
+## Configuration
+- `REACT_APP_API_URL` (frontend): API address, default `http://localhost:8000`. See `frontend/.env.example`.
+- `CORS_ORIGINS` (backend): comma-separated allowed origins, default `http://localhost:3000,http://127.0.0.1:3000`.
+
+## Run the tests
+```bash
+cd backend
+pip install -r requirements.txt -r requirements-dev.txt
+python -m pytest -q
+```
 
 ## Notes
 - PDF text extraction uses `pypdf`.
