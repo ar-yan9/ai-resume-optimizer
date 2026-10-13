@@ -10,7 +10,7 @@ import { Pie } from "react-chartjs-2";
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
-const API_URL = "http://localhost:8000";
+const API_URL = process.env.REACT_APP_API_URL || "http://localhost:8000";
 
 function KeywordList({ title, items, variant }) {
   return (
@@ -197,4 +197,4 @@ export default function App() {
       </footer>
     </main>
   );
-                  }
+}
