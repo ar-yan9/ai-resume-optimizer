@@ -89,3 +89,15 @@ footer p { margin-bottom: 6px; }
   .score-badge strong { font-size: 23px; }
   .topbar-tag { font-size: 9px; }
 }
+
+
+.copy-button {
+  border: 1px solid #d1d5db;
+  background: #fff;
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  margin-bottom: 8px;
+}
+.copy-button:hover { background: #f3f4f6; }
