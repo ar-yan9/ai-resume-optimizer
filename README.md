@@ -13,6 +13,15 @@ A beginner-friendly React + FastAPI application that compares a resume with a jo
 
 > This is a newly written starter implementation, not a recovered copy of any previous source code. The score is a simple keyword-overlap estimate, not a validated ATS score.
 
+## JD-frequency weighting (API)
+The backend now returns an additional `weighted_keyword_score`. Each filtered job-description token gets a weight equal to its frequency in the JD. For example, JD `Python Python Python React` and resume `Python` gives 75% weighted coverage and 50% unique-keyword overlap.
+
+The existing `ats_score` field and frontend display keep the original unique-keyword overlap, so existing callers are unchanged. The weighted score is currently available through the API only, not displayed in the UI. Repeated resume words give no extra credit. Repetition in a JD is a crude proxy, not evidence that a skill is essential, and neither score predicts hiring or a real ATS ranking.
+
+Responses also include `keyword_weights` (top 50 terms), `total_job_keyword_weight` and `matched_keyword_weight`. Totals and scores include every filtered JD term, even when displayed lists are capped. Tokens remain case-insensitive single words, without semantic matching or synonym detection.
+
+Backend tests include frequency weighting, boundaries and synthetic readable/empty-text PDF fixtures. No personal resume data is used in tests.
+
 ## Requirements
 - Python 3.10+
 - Node.js 18+
