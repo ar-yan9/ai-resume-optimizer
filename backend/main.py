@@ -53,13 +53,18 @@ def extract_resume_text(filename: str, content: bytes) -> str:
     )
 
 
-def keywords(text: str) -> List[str]:
+def keyword_counts(text: str) -> Counter:
+    """Token frequency in source text, with the same filtering as keyword lists."""
     tokens = re.findall(r"[a-zA-Z][a-zA-Z0-9+#.-]{1,}", text.lower())
-    counts = Counter(token.strip(".-") for token in tokens)
-    return [
-        word for word, _ in counts.most_common()
-        if len(word) > 1 and word not in STOP_WORDS and not word.isdigit()
-    ]
+    return Counter(
+        word for token in tokens
+        if len(word := token.strip(".-")) > 1
+        and word not in STOP_WORDS and not word.isdigit()
+    )
+
+
+def keywords(text: str) -> List[str]:
+    return [word for word, _ in keyword_counts(text).most_common()]
 
 
 @app.get("/")
@@ -94,13 +99,23 @@ async def analyze_resume(
         )
 
     resume_words = set(keywords(resume_text))
-    job_words = list(dict.fromkeys(keywords(job_description)))
+    job_counts = keyword_counts(job_description)
+    job_words = [word for word, _ in job_counts.most_common()]
     matched = [word for word in job_words if word in resume_words]
     missing = [word for word in job_words if word not in resume_words]
 
     score = round((len(matched) / len(job_words)) * 100) if job_words else 0
 
+    total_weight = sum(job_counts.values())
+    matched_weight = sum(job_counts[word] for word in matched)
+    weighted_score = round(matched_weight / total_weight * 100) if total_weight else 0
+
     return {
+        "weighted_keyword_score": weighted_score,
+        "keyword_weights": dict(job_counts.most_common(50)),
+        "total_job_keyword_weight": total_weight,
+        "matched_keyword_weight": matched_weight,
+        "weighting_note": "JD token frequency only; repetition does not prove importance. Resume repetition gives no extra credit.",
         "filename": resume.filename,
         "ats_score": score,
         "matched_keywords": matched[:50],
