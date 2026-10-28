@@ -69,6 +69,7 @@ textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px #4f46e51a; }
 .stat-card { padding: 22px; }
 .stat-label { display: block; color: var(--muted); font-size: 13px; margin-bottom: 8px; }
 .stat-card strong { font: 800 32px 'Manrope', sans-serif; }
+.stat-note { margin: 8px 0 0; }
 .tip { padding: 15px; border-left: 3px solid var(--accent); background: #f0efff; color: #45406e; font-size: 13px; line-height: 1.6; margin: 0; border-radius: 0 8px 8px 0; }
 .keyword-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 18px; }
 .keyword-card h3 { display: flex; justify-content: space-between; align-items: center; }
