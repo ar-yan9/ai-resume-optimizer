@@ -16,7 +16,7 @@ A beginner-friendly React + FastAPI application that compares a resume with a jo
 ## JD-frequency weighting (API)
 The backend now returns an additional `weighted_keyword_score`. Each filtered job-description token gets a weight equal to its frequency in the JD. For example, JD `Python Python Python React` and resume `Python` gives 75% weighted coverage and 50% unique-keyword overlap.
 
-The existing `ats_score` field and frontend display keep the original unique-keyword overlap, so existing callers are unchanged. The weighted score is currently available through the API only, not displayed in the UI. Repeated resume words give no extra credit. Repetition in a JD is a crude proxy, not evidence that a skill is essential, and neither score predicts hiring or a real ATS ranking.
+The existing `ats_score` field and main frontend score keep the original unique-keyword overlap, so existing callers are unchanged. The results UI also shows the weighted JD score with a short explanation. Repeated resume words give no extra credit. Repetition in a JD is a crude proxy, not evidence that a skill is essential, and neither score predicts hiring or a real ATS ranking.
 
 Responses also include `keyword_weights` (top 50 terms), `total_job_keyword_weight` and `matched_keyword_weight`. Totals and scores include every filtered JD term, even when displayed lists are capped. Tokens remain case-insensitive single words, without semantic matching or synonym detection.
 
@@ -27,11 +27,19 @@ Backend tests include frequency weighting, boundaries and synthetic readable/emp
 - Node.js 18+
 
 ## Run the backend
+Windows PowerShell:
+```powershell
+cd backend
+py -3.11 -m venv venv
+venv\Scripts\python.exe -m pip install -r requirements.txt
+venv\Scripts\python.exe -m uvicorn main:app --reload --port 8000
+```
+
+macOS/Linux:
 ```bash
 cd backend
-python -m venv venv
-# Windows: venv\Scripts\activate
-# macOS/Linux: source venv/bin/activate
+python3 -m venv venv
+source venv/bin/activate
 pip install -r requirements.txt
 uvicorn main:app --reload --port 8000
 ```
@@ -50,10 +58,18 @@ The React app runs on http://localhost:3000 and calls the API at http://localhos
 - `CORS_ORIGINS` (backend): comma-separated allowed origins, default `http://localhost:3000,http://127.0.0.1:3000`.
 
 ## Run the tests
+Windows PowerShell:
+```powershell
+cd backend
+venv\Scripts\python.exe -m pip install -r requirements.txt -r requirements-dev.txt
+venv\Scripts\python.exe -m pytest -q
+```
+
+macOS/Linux:
 ```bash
 cd backend
-pip install -r requirements.txt -r requirements-dev.txt
-python -m pytest -q
+python3 -m pip install -r requirements.txt -r requirements-dev.txt
+python3 -m pytest -q
 ```
 
 ## Notes
