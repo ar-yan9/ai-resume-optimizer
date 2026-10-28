@@ -197,6 +197,13 @@ export default function App() {
                 <span className="stat-label">Keywords reviewed</span>
                 <strong>{result.total_job_keywords}</strong>
               </div>
+              <div className="stat-card">
+                <span className="stat-label">Weighted JD score</span>
+                <strong>{result.weighted_keyword_score}%</strong>
+                <p className="muted small stat-note">
+                  Counts repeated job-description terms. Repetition is only a rough signal, not proof of importance.
+                </p>
+              </div>
               <p className="tip">Tip: only add a missing keyword if it accurately describes your experience or skills.</p>
             </section>
           </div>
