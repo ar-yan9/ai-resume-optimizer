@@ -1,6 +1,9 @@
+from io import BytesIO
+import zipfile
+
 from fastapi.testclient import TestClient
 
-from main import app, keywords
+from main import app, keywords, extract_resume_text
 
 client = TestClient(app)
 
@@ -35,7 +38,7 @@ def test_txt_analysis_counts_matches():
 
 
 def test_rejects_unsupported_type():
-    assert analyze(b"x", "cv.docx", "Python").status_code == 400
+    assert analyze(b"x", "cv.exe", "Python").status_code == 400
 
 
 def test_rejects_empty_file_and_blank_jd():
@@ -126,3 +129,65 @@ def test_readable_pdf_analysis():
 
 def test_pdf_without_readable_text_is_rejected():
     assert analyze(pdf_fixture(""), "empty-text.pdf", "Python").status_code == 400
+
+
+DOCX_NS = "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
+
+
+def docx_fixture(paragraphs):
+    """Minimal synthetic .docx: a zip containing only word/document.xml."""
+    body = "".join(
+        '<w:p><w:r><w:t xml:space="preserve">' + text + "</w:t></w:r></w:p>"
+        for text in paragraphs
+    )
+    document = (
+        '<w:document xmlns:w="' + DOCX_NS + '"><w:body>' + body + "</w:body></w:document>"
+    ).encode()
+    buffer = BytesIO()
+    with zipfile.ZipFile(buffer, "w") as archive:
+        archive.writestr("word/document.xml", document)
+    return buffer.getvalue()
+
+
+def test_docx_analysis_counts_matches():
+    r = analyze(
+        docx_fixture(["Python FastAPI React developer", "Built APIs with Docker"]),
+        "cv.docx",
+        "Python React Docker Kubernetes",
+    )
+    assert r.status_code == 200
+    body = r.json()
+    assert body["matched_keywords"] == ["python", "react", "docker"]
+    assert body["missing_keywords"] == ["kubernetes"]
+    assert body["ats_score"] == 75
+
+
+def test_docx_paragraphs_join_with_newlines():
+    text = extract_resume_text("cv.docx", docx_fixture(["First line Python", "Second line React"]))
+    assert text == "First line Python\nSecond line React"
+
+
+def test_docx_runs_concatenate_within_paragraph():
+    body = "".join(
+        '<w:p><w:r><w:t>Py</w:t></w:r><w:r><w:t>thon</w:t></w:r></w:p>'
+    )
+    document = ('<w:document xmlns:w="' + DOCX_NS + '"><w:body>' + body + "</w:body></w:document>").encode()
+    buffer = BytesIO()
+    with zipfile.ZipFile(buffer, "w") as archive:
+        archive.writestr("word/document.xml", document)
+    assert extract_resume_text("cv.docx", buffer.getvalue()) == "Python"
+
+
+def test_rejects_bad_docx():
+    assert analyze(b"not a docx at all", "cv.docx", "Python").status_code == 400
+
+
+def test_docx_without_document_xml_is_rejected():
+    buffer = BytesIO()
+    with zipfile.ZipFile(buffer, "w") as archive:
+        archive.writestr("readme.txt", b"hello")
+    assert analyze(buffer.getvalue(), "cv.docx", "Python").status_code == 400
+
+
+def test_docx_without_readable_text_is_rejected():
+    assert analyze(docx_fixture(["", "   "]), "empty.docx", "Python").status_code == 400
