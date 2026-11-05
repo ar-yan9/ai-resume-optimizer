@@ -3,7 +3,7 @@
 A beginner-friendly React + FastAPI application that compares a resume with a job description and reports an estimated keyword-match score.
 
 ## Features
-- Upload a PDF or TXT resume
+- Upload a PDF, DOCX or TXT resume
 - Paste a job description
 - View an estimated keyword match score
 - View matched and missing keywords
@@ -21,6 +21,9 @@ The existing `ats_score` field and main frontend score keep the original unique-
 Responses also include `keyword_weights` (top 50 terms), `total_job_keyword_weight` and `matched_keyword_weight`. Totals and scores include every filtered JD term, even when displayed lists are capped. Tokens remain case-insensitive single words, without semantic matching or synonym detection.
 
 Backend tests include frequency weighting, boundaries and synthetic readable/empty-text PDF fixtures. No personal resume data is used in tests.
+
+## DOCX resumes
+`.docx` files are parsed with the Python standard library only (zipfile + XML), no extra dependency. The extractor reads paragraph text from the main document body: headers, footers, footnotes and comments are not included, and formatting, tables layout and images are ignored. Word's older binary `.doc` format is not supported - save it as `.docx` or PDF first.
 
 ## Requirements
 - Python 3.10+
@@ -73,6 +76,6 @@ python3 -m pytest -q
 ```
 
 ## Notes
-- PDF text extraction uses `pypdf`.
+- PDF text extraction uses `pypdf`; DOCX text extraction is standard-library only.
 - This starter does not store uploaded resumes.
 - Do not upload sensitive personal documents to any app unless you understand how they are processed.
