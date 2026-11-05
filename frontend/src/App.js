@@ -59,7 +59,7 @@ export default function App() {
     setResult(null);
 
     if (!resume) {
-      setError("Please choose a PDF or TXT resume first.");
+      setError("Please choose a PDF, DOCX or TXT resume first.");
       return;
     }
     if (!jobDescription.trim()) {
@@ -121,18 +121,18 @@ export default function App() {
             <span className="step">01</span>
             <div>
               <h2>Upload your resume</h2>
-              <p>Choose a text-based PDF or TXT file (max 5 MB).</p>
+              <p>Choose a text-based PDF, DOCX or TXT file (max 5 MB).</p>
             </div>
           </div>
           <label className="upload-area">
             <input
               type="file"
-              accept=".pdf,.txt"
+              accept=".pdf,.docx,.txt"
               onChange={(event) => setResume(event.target.files?.[0] || null)}
             />
             <span className="upload-icon">↑</span>
             <strong>{resume ? resume.name : "Choose a file to upload"}</strong>
-            <span className="muted">{resume ? `${(resume.size / 1024).toFixed(1)} KB` : "PDF or TXT · Your file is processed for this request"}</span>
+            <span className="muted">{resume ? `${(resume.size / 1024).toFixed(1)} KB` : "PDF, DOCX or TXT · Your file is processed for this request"}</span>
           </label>
         </section>
 
