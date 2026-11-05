@@ -1,6 +1,8 @@
 from io import BytesIO
 import os
 import re
+import zipfile
+import xml.etree.ElementTree as ET
 from collections import Counter
 from typing import List
 
@@ -37,6 +39,31 @@ STOP_WORDS = {
 }
 
 
+WORD_NS = "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}"
+
+
+def extract_docx_text(content: bytes) -> str:
+    """Body text from a .docx (Office Open XML zip) using only the standard library.
+
+    Reads word/document.xml paragraph runs. Headers, footers, footnotes and
+    comments live in separate parts and are not included; formatting is ignored.
+    """
+    try:
+        with zipfile.ZipFile(BytesIO(content)) as archive:
+            xml_bytes = archive.read("word/document.xml")
+    except (zipfile.BadZipFile, KeyError) as exc:
+        raise HTTPException(status_code=400, detail="Could not read this DOCX file.") from exc
+    try:
+        root = ET.fromstring(xml_bytes)
+    except ET.ParseError as exc:
+        raise HTTPException(status_code=400, detail="Could not read this DOCX file.") from exc
+    paragraphs = []
+    for para in root.iter(WORD_NS + "p"):
+        text = "".join(node.text or "" for node in para.iter(WORD_NS + "t"))
+        paragraphs.append(text)
+    return "\n".join(paragraphs)
+
+
 def extract_resume_text(filename: str, content: bytes) -> str:
     suffix = filename.lower().rsplit(".", 1)[-1] if "." in filename else ""
     if suffix == "pdf":
@@ -45,11 +72,13 @@ def extract_resume_text(filename: str, content: bytes) -> str:
             return "\n".join(page.extract_text() or "" for page in reader.pages)
         except Exception as exc:
             raise HTTPException(status_code=400, detail="Could not read this PDF.") from exc
+    if suffix == "docx":
+        return extract_docx_text(content)
     if suffix in {"txt", "md"}:
         return content.decode("utf-8", errors="replace")
     raise HTTPException(
         status_code=400,
-        detail="Unsupported file type. Please upload a PDF or TXT file."
+        detail="Unsupported file type. Please upload a PDF, DOCX or TXT file."
     )
 
 
