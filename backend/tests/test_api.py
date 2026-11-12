@@ -191,3 +191,49 @@ def test_docx_without_document_xml_is_rejected():
 
 def test_docx_without_readable_text_is_rejected():
     assert analyze(docx_fixture(["", "   "]), "empty.docx", "Python").status_code == 400
+
+
+def test_phrase_matching_basic():
+    body = analyze(
+        b"I build machine learning services and web applications",
+        "cv.txt",
+        "Looking for machine learning experience and cloud infrastructure skills",
+    ).json()
+    assert "machine learning" in body["matched_phrases"]
+    assert "cloud infrastructure" in body["missing_phrases"]
+    assert body["total_job_phrases"] == 2
+    assert body["total_matched_phrases"] == 1
+
+
+def test_phrase_order_matters():
+    body = analyze(b"learning machine is fun", "cv.txt", "machine learning").json()
+    assert body["matched_phrases"] == []
+    assert body["missing_phrases"] == ["machine learning"]
+
+
+def test_stop_words_break_phrases():
+    body = analyze(b"python", "cv.txt", "knowledge of python").json()
+    assert body["total_job_phrases"] == 0
+    assert body["matched_phrases"] == []
+    assert body["missing_phrases"] == []
+
+
+def test_phrase_frequency_orders_lists():
+    # Crude adjacency is pinned honestly: "learning machine" appears as a
+    # cross-sentence pair because tokenization drops the period.
+    body = analyze(
+        b"machine learning",
+        "cv.txt",
+        "machine learning. machine learning. cloud platforms",
+    ).json()
+    assert body["matched_phrases"] == ["machine learning"]
+    assert body["missing_phrases"] == ["learning machine", "learning cloud", "cloud platforms"]
+    assert body["total_job_phrases"] == 4
+    assert body["total_matched_phrases"] == 1
+
+
+def test_phrase_lists_cap_at_fifty():
+    jd = " ".join("pair%02d phrase%02d." % (i, i) for i in range(60))
+    body = analyze(b"nothing relevant", "cv.txt", jd).json()
+    assert body["total_job_phrases"] > 50
+    assert len(body["missing_phrases"]) == 50
