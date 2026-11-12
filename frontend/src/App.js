@@ -212,6 +212,12 @@ export default function App() {
             <KeywordList title="Matched keywords" items={result.matched_keywords} variant="matched" />
             <KeywordList title="Missing keywords" items={result.missing_keywords} variant="missing" />
           </div>
+
+          <div className="keyword-grid">
+            <KeywordList title="Matched phrases" items={result.matched_phrases} variant="matched" />
+            <KeywordList title="Missing phrases" items={result.missing_phrases} variant="missing" />
+          </div>
+          <p className="muted small">{result.phrase_note}</p>
         </section>
       )}
 
