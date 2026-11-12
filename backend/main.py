@@ -96,6 +96,24 @@ def keywords(text: str) -> List[str]:
     return [word for word, _ in keyword_counts(text).most_common()]
 
 
+def keyword_bigrams(text: str) -> Counter:
+    """Adjacent two-word combinations where both words pass the keyword filter.
+
+    Built from the raw token stream, so stop words break a phrase: "knowledge
+    of python" yields no pair, while "machine learning models" yields
+    "machine learning" and "learning models". Crude adjacency only - this is
+    not NLP phrase extraction.
+    """
+    words = [token.strip(".-") for token in re.findall(r"[a-zA-Z][a-zA-Z0-9+#.-]{1,}", text.lower())]
+    return Counter(
+        first + " " + second
+        for first, second in zip(words, words[1:])
+        if len(first) > 1 and len(second) > 1
+        and first not in STOP_WORDS and second not in STOP_WORDS
+        and not first.isdigit() and not second.isdigit()
+    )
+
+
 @app.get("/")
 def root():
     return {"message": "AI Resume Optimizer API is running"}
@@ -139,7 +157,18 @@ async def analyze_resume(
     matched_weight = sum(job_counts[word] for word in matched)
     weighted_score = round(matched_weight / total_weight * 100) if total_weight else 0
 
+    job_phrase_counts = keyword_bigrams(job_description)
+    resume_phrases = set(keyword_bigrams(resume_text))
+    job_phrases = [phrase for phrase, _ in job_phrase_counts.most_common()]
+    matched_phrases = [phrase for phrase in job_phrases if phrase in resume_phrases]
+    missing_phrases = [phrase for phrase in job_phrases if phrase not in resume_phrases]
+
     return {
+        "matched_phrases": matched_phrases[:50],
+        "missing_phrases": missing_phrases[:50],
+        "total_job_phrases": len(job_phrases),
+        "total_matched_phrases": len(matched_phrases),
+        "phrase_note": "Adjacent two-word combinations only; not NLP phrase extraction, and pairs like 'team player' can be ordinary wording.",
         "weighted_keyword_score": weighted_score,
         "keyword_weights": dict(job_counts.most_common(50)),
         "total_job_keyword_weight": total_weight,
