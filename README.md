@@ -22,6 +22,9 @@ Responses also include `keyword_weights` (top 50 terms), `total_job_keyword_weig
 
 Backend tests include frequency weighting, boundaries and synthetic readable/empty-text PDF fixtures. No personal resume data is used in tests.
 
+## Two-word phrases (API)
+The response also includes `matched_phrases` and `missing_phrases`: adjacent two-word combinations from the job description where both words pass the keyword filter (so "machine learning" is checked as a phrase, while "knowledge of python" produces none). A phrase counts as matched only when the same two words appear next to each other, in the same order, in the resume. This is crude adjacency, not NLP phrase extraction: sentence boundaries are ignored, and pairs like "team player" can be ordinary wording rather than a required skill. `total_job_phrases` and `total_matched_phrases` count every phrase even though the lists are capped at 50. The results UI shows both phrase lists with this caveat.
+
 ## DOCX resumes
 `.docx` files are parsed with the Python standard library only (zipfile + XML), no extra dependency. The extractor reads paragraph text from the main document body: headers, footers, footnotes and comments are not included, and formatting, tables layout and images are ignored. Word's older binary `.doc` format is not supported - save it as `.docx` or PDF first.
 
