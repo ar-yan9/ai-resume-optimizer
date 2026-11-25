@@ -39,6 +39,29 @@ STOP_WORDS = {
 }
 
 
+# Small fixed map of unambiguous technical spelling variants to one canonical
+# form, applied after token filtering. This is not semantic matching: only the
+# spellings listed here are unified, so "java" and "javascript" stay distinct.
+TOKEN_ALIASES = {
+    "nodejs": "node.js",
+    "reactjs": "react.js",
+    "vuejs": "vue.js",
+    "nextjs": "next.js",
+    "expressjs": "express.js",
+    "nestjs": "nest.js",
+    "csharp": "c#",
+    "dotnet": "net",
+    "postgres": "postgresql",
+    "k8s": "kubernetes",
+    "golang": "go",
+}
+
+
+def canonical_token(word: str) -> str:
+    """Canonical form of a filtered token, using TOKEN_ALIASES only."""
+    return TOKEN_ALIASES.get(word, word)
+
+
 WORD_NS = "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}"
 
 
@@ -83,13 +106,17 @@ def extract_resume_text(filename: str, content: bytes) -> str:
 
 
 def keyword_counts(text: str) -> Counter:
-    """Token frequency in source text, with the same filtering as keyword lists."""
-    tokens = re.findall(r"[a-zA-Z][a-zA-Z0-9+#.-]{1,}", text.lower())
-    return Counter(
-        word for token in tokens
-        if len(word := token.strip(".-")) > 1
-        and word not in STOP_WORDS and not word.isdigit()
-    )
+    """Token frequency in source text, with the same filtering as keyword lists.
+
+    Filtered tokens pass through TOKEN_ALIASES, so spelling variants like
+    "nodejs" and "node.js" count under one canonical form.
+    """
+    counts = Counter()
+    for token in re.findall(r"[a-zA-Z][a-zA-Z0-9+#.-]{1,}", text.lower()):
+        word = token.strip(".-")
+        if len(word) > 1 and word not in STOP_WORDS and not word.isdigit():
+            counts[canonical_token(word)] += 1
+    return counts
 
 
 def keywords(text: str) -> List[str]:
@@ -104,7 +131,10 @@ def keyword_bigrams(text: str) -> Counter:
     "machine learning" and "learning models". Crude adjacency only - this is
     not NLP phrase extraction.
     """
-    words = [token.strip(".-") for token in re.findall(r"[a-zA-Z][a-zA-Z0-9+#.-]{1,}", text.lower())]
+    words = [
+        canonical_token(token.strip(".-"))
+        for token in re.findall(r"[a-zA-Z][a-zA-Z0-9+#.-]{1,}", text.lower())
+    ]
     return Counter(
         first + " " + second
         for first, second in zip(words, words[1:])
