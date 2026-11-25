@@ -237,3 +237,28 @@ def test_phrase_lists_cap_at_fifty():
     body = analyze(b"nothing relevant", "cv.txt", jd).json()
     assert body["total_job_phrases"] > 50
     assert len(body["missing_phrases"]) == 50
+def test_alias_variants_match_canonical_form():
+    body = analyze(
+        b"NodeJS Postgres k8s developer", "cv.txt", "node.js postgresql kubernetes",
+    ).json()
+    assert body["matched_keywords"] == ["node.js", "postgresql", "kubernetes"]
+    assert body["missing_keywords"] == []
+    assert body["ats_score"] == 100
+
+
+def test_alias_weights_merge_spelling_variants():
+    body = analyze(b"node.js react", "cv.txt", "NodeJS node.js React").json()
+    assert body["keyword_weights"] == {"node.js": 2, "react": 1}
+    assert body["weighted_keyword_score"] == 100
+
+
+def test_alias_applies_to_phrases():
+    body = analyze(b"I build node.js services", "cv.txt", "nodejs services").json()
+    assert body["matched_phrases"] == ["node.js services"]
+    assert body["missing_phrases"] == []
+
+
+def test_non_aliased_words_stay_distinct():
+    body = analyze(b"java developer", "cv.txt", "javascript").json()
+    assert body["matched_keywords"] == []
+    assert body["missing_keywords"] == ["javascript"]
