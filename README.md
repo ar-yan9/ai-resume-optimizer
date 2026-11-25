@@ -18,12 +18,15 @@ The backend now returns an additional `weighted_keyword_score`. Each filtered jo
 
 The existing `ats_score` field and main frontend score keep the original unique-keyword overlap, so existing callers are unchanged. The results UI also shows the weighted JD score with a short explanation. Repeated resume words give no extra credit. Repetition in a JD is a crude proxy, not evidence that a skill is essential, and neither score predicts hiring or a real ATS ranking.
 
-Responses also include `keyword_weights` (top 50 terms), `total_job_keyword_weight` and `matched_keyword_weight`. Totals and scores include every filtered JD term, even when displayed lists are capped. Tokens remain case-insensitive single words, without semantic matching or synonym detection.
+Responses also include `keyword_weights` (top 50 terms), `total_job_keyword_weight` and `matched_keyword_weight`. Totals and scores include every filtered JD term, even when displayed lists are capped. Tokens remain case-insensitive single words, without semantic matching. A small fixed alias map unifies unambiguous technical spellings only (see Alias normalization below); it is not synonym detection.
 
 Backend tests include frequency weighting, boundaries and synthetic readable/empty-text PDF fixtures. No personal resume data is used in tests.
 
 ## Two-word phrases (API)
 The response also includes `matched_phrases` and `missing_phrases`: adjacent two-word combinations from the job description where both words pass the keyword filter (so "machine learning" is checked as a phrase, while "knowledge of python" produces none). A phrase counts as matched only when the same two words appear next to each other, in the same order, in the resume. This is crude adjacency, not NLP phrase extraction: sentence boundaries are ignored, and pairs like "team player" can be ordinary wording rather than a required skill. `total_job_phrases` and `total_matched_phrases` count every phrase even though the lists are capped at 50. The results UI shows both phrase lists with this caveat.
+
+## Alias normalization
+A small fixed map (`TOKEN_ALIASES` in `backend/main.py`) unifies unambiguous technical spellings before matching, so "NodeJS" and "node.js" count as the same skill. Covered variants: `nodejs`, `reactjs`, `vuejs`, `nextjs`, `expressjs`, `nestjs` (to their dotted forms), `csharp` (to `c#`), `dotnet` (to `net`), `postgres` (to `postgresql`), `k8s` (to `kubernetes`) and `golang` (to `go`). Variants of one term merge into a single weight in the JD counts. This is only the fixed list above - not semantic matching, so near-terms like "java" and "javascript" stay distinct.
 
 ## DOCX resumes
 `.docx` files are parsed with the Python standard library only (zipfile + XML), no extra dependency. The extractor reads paragraph text from the main document body: headers, footers, footnotes and comments are not included, and formatting, tables layout and images are ignored. Word's older binary `.doc` format is not supported - save it as `.docx` or PDF first.
